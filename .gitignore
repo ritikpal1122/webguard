@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.auth/
+.env
+webguard-results/
+test-results/
+playwright-report/
+screenshots/
+*.tsbuildinfo
