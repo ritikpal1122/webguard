@@ -18,11 +18,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/webguard"
+    "url": "https://github.com/ritikpal1122/webguard"
   },
-  "homepage": "https://github.com/user/webguard#readme",
+  "homepage": "https://github.com/ritikpal1122/webguard#readme",
   "bugs": {
-    "url": "https://github.com/user/webguard/issues"
+    "url": "https://github.com/ritikpal1122/webguard/issues"
   },
   "type": "module",
   "bin": {
