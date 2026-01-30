@@ -284,6 +284,20 @@ const result2 = await run(fileConfig);
 - Node.js >= 18
 - Playwright browsers: `npx playwright install chromium`
 
+## Contributing
+
+Contributions are welcome! Whether it's a bug fix, new audit, plugin, or documentation improvement — all contributions help make webguardx better for everyone.
+
+Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request. It covers:
+
+- Setting up the development environment
+- Project structure overview
+- How to add a new audit
+- Code style and conventions
+- Pull request process
+
+If you find a bug or have a feature request, please [open an issue](https://github.com/user/webguard/issues).
+
 ## License
 
 MIT
