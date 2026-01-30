@@ -35,11 +35,22 @@ const BUILTIN_AUDITS: Record<string, Audit> = {
 };
 
 export function getEnabledAudits(
-  auditsConfig: WebguardConfig["audits"]
+  auditsConfig: Record<string, boolean>,
+  pluginAudits: Audit[] = [],
+  customAudits: Audit[] = []
 ): Audit[] {
+  const allAudits: Record<string, Audit> = { ...BUILTIN_AUDITS };
+
+  // Register plugin-provided audits
+  for (const audit of [...pluginAudits, ...customAudits]) {
+    allAudits[audit.name] = audit;
+  }
+
   const enabled: Audit[] = [];
-  for (const [name, audit] of Object.entries(BUILTIN_AUDITS)) {
-    if (auditsConfig[name as keyof typeof auditsConfig]) {
+  for (const [name, audit] of Object.entries(allAudits)) {
+    // Custom/plugin audits default to enabled unless explicitly disabled
+    const isEnabled = auditsConfig[name] ?? true;
+    if (isEnabled) {
       enabled.push(audit);
     }
   }

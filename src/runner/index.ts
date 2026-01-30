@@ -4,8 +4,10 @@ import type { RunResult, PageResult } from "../types/index.js";
 import { authenticate } from "../auth/index.js";
 import { getEnabledAudits } from "../audits/index.js";
 import { runPageAudits } from "./page-runner.js";
+import { runPagesParallel } from "./parallel.js";
 import { setupRunDirectory } from "./setup.js";
 import { runReporters } from "../reporters/index.js";
+import { PluginRegistry, loadPlugins } from "../plugins/index.js";
 import { log } from "../utils/logger.js";
 
 export interface RunOptions {
@@ -23,6 +25,15 @@ export async function run(
   // Override headless from CLI
   if (options.headed !== undefined) {
     config.browser.headless = !options.headed;
+  }
+
+  // Load plugins
+  const registry = new PluginRegistry();
+  if (config.plugins.length > 0) {
+    const plugins = await loadPlugins(config.plugins);
+    for (const plugin of plugins) {
+      registry.register(plugin);
+    }
   }
 
   // Setup run directory
@@ -49,8 +60,15 @@ export async function run(
 
   const browserContext = await browser.newContext(contextOptions);
 
-  // Get enabled audits
-  let audits = getEnabledAudits(config.audits);
+  // beforeAll hook
+  await registry.runHook("beforeAll", { config, browserContext });
+
+  // Get enabled audits (built-in + plugin + custom)
+  let audits = getEnabledAudits(
+    config.audits,
+    registry.getPluginAudits(),
+    config.customAudits
+  );
 
   // Filter audits if specified
   if (options.auditsFilter?.length) {
@@ -69,31 +87,61 @@ export async function run(
   log.info(`Base URL: ${config.baseURL}`);
   log.info(`Pages:    ${pages.length}`);
   log.info(`Audits:   ${enabledAuditNames.join(", ")}`);
+  if (config.plugins.length > 0) {
+    log.info(`Plugins:  ${config.plugins.length}`);
+  }
+  if (config.runner.concurrency > 1) {
+    log.info(`Workers:  ${config.runner.concurrency}`);
+  }
   log.plain("");
 
   // Run audits on each page
-  const pageResults: PageResult[] = [];
+  let pageResults: PageResult[];
 
-  for (let i = 0; i < pages.length; i++) {
-    const pageEntry = pages[i];
-    log.plain(`  [${i + 1}/${pages.length}] ${pageEntry.name} (${pageEntry.path})`);
-
-    const result = await runPageAudits(
-      pageEntry,
+  if (config.runner.concurrency > 1) {
+    // Parallel execution
+    pageResults = await runPagesParallel(
+      pages,
       config,
       browserContext,
       audits,
-      runDir
+      runDir,
+      registry,
+      config.runner.concurrency,
+      config.runner.failFast
     );
-    pageResults.push(result);
+  } else {
+    // Sequential execution
+    pageResults = [];
 
-    // Print inline results
-    for (const audit of result.audits) {
-      const icon = audit.passed ? "  \u2713" : audit.severity === "warning" ? "  \u26A0" : "  \u2717";
-      const duration = audit.duration ? `${audit.duration}ms` : "";
-      log.plain(`${icon} ${audit.audit.padEnd(20)} ${audit.message.padEnd(30)} ${duration}`);
+    for (let i = 0; i < pages.length; i++) {
+      const pageEntry = pages[i];
+      log.plain(`  [${i + 1}/${pages.length}] ${pageEntry.name} (${pageEntry.path})`);
+
+      const result = await runPageAudits(
+        pageEntry,
+        config,
+        browserContext,
+        audits,
+        runDir,
+        registry
+      );
+      pageResults.push(result);
+
+      // Print inline results
+      for (const audit of result.audits) {
+        const icon = audit.passed ? "  \u2713" : audit.severity === "warning" ? "  \u26A0" : "  \u2717";
+        const duration = audit.duration ? `${audit.duration}ms` : "";
+        log.plain(`${icon} ${audit.audit.padEnd(20)} ${audit.message.padEnd(30)} ${duration}`);
+      }
+      log.plain("");
+
+      // Fail fast
+      if (config.runner.failFast && result.audits.some((a) => a.severity === "fail")) {
+        log.warn("Fail fast enabled — stopping after first failure");
+        break;
+      }
     }
-    log.plain("");
   }
 
   await browserContext.close();
@@ -119,8 +167,11 @@ export async function run(
     },
   };
 
-  // Run reporters
-  await runReporters(runResult, config, runDir);
+  // afterAll hook
+  await registry.runHook("afterAll", { config, result: runResult });
+
+  // Run reporters (built-in + plugin)
+  await runReporters(runResult, config, runDir, registry.getPluginReporters());
 
   return runResult;
 }

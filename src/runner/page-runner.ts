@@ -3,6 +3,7 @@ import type { BrowserContext } from "playwright";
 import type { PageEntry, WebguardConfig } from "../config/schema.js";
 import type { AuditResult, PageResult } from "../types/index.js";
 import type { Audit, AuditContext } from "../audits/index.js";
+import type { PluginRegistry } from "../plugins/registry.js";
 import { navigateWithRetry } from "./retry.js";
 import { sanitize } from "../utils/sanitize.js";
 import { ensureDir } from "../utils/fs.js";
@@ -13,11 +14,17 @@ export async function runPageAudits(
   config: WebguardConfig,
   browserContext: BrowserContext,
   audits: Audit[],
-  runDir: string
+  runDir: string,
+  registry?: PluginRegistry
 ): Promise<PageResult> {
   const start = Date.now();
   const url = `${config.baseURL}${pageEntry.path}`;
   const page = await browserContext.newPage();
+
+  // beforePage hook
+  if (registry) {
+    await registry.runHook("beforePage", { config, pageEntry, page });
+  }
 
   // Attach console listener before navigation
   const consoleMessages: Array<{ type: string; text: string }> = [];
@@ -57,20 +64,31 @@ export async function runPageAudits(
   // Run each audit
   const auditResults: AuditResult[] = [];
   for (const audit of pageAudits) {
+    // beforeAudit hook
+    if (registry) {
+      await registry.runHook("beforeAudit", { audit, auditContext: ctx });
+    }
+
     const auditStart = Date.now();
+    let result: AuditResult;
     try {
-      const result = await audit.run(ctx);
+      result = await audit.run(ctx);
       result.duration = Date.now() - auditStart;
-      auditResults.push(result);
     } catch (err) {
-      auditResults.push({
+      result = {
         audit: audit.name,
         page: pageEntry.name,
         passed: false,
         severity: "fail",
         message: `Audit error: ${(err as Error).message}`,
         duration: Date.now() - auditStart,
-      });
+      };
+    }
+    auditResults.push(result);
+
+    // afterAudit hook
+    if (registry) {
+      await registry.runHook("afterAudit", { audit, result });
     }
   }
 
@@ -91,9 +109,7 @@ export async function runPageAudits(
     }
   }
 
-  await page.close();
-
-  return {
+  const pageResult: PageResult = {
     page: pageEntry.name,
     path: pageEntry.path,
     url,
@@ -101,4 +117,13 @@ export async function runPageAudits(
     screenshotPath,
     duration: Date.now() - start,
   };
+
+  // afterPage hook
+  if (registry) {
+    await registry.runHook("afterPage", { config, pageEntry, pageResult });
+  }
+
+  await page.close();
+
+  return pageResult;
 }

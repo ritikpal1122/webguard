@@ -72,16 +72,23 @@ export const WebguardConfigSchema = z.object({
 
   auth: AuthSchema.default({ method: "none" }),
 
+  // Open record — built-in keys have defaults, custom audit keys are allowed
   audits: z
-    .object({
-      httpStatus: z.boolean().default(true),
-      contentVisibility: z.boolean().default(true),
-      accessibility: z.boolean().default(true),
-      lighthouse: z.boolean().default(false),
-      brokenLinks: z.boolean().default(false),
-      consoleErrors: z.boolean().default(true),
-    })
-    .default({}),
+    .record(z.string(), z.boolean())
+    .default({
+      httpStatus: true,
+      contentVisibility: true,
+      accessibility: true,
+      lighthouse: false,
+      brokenLinks: false,
+      consoleErrors: true,
+    }),
+
+  // Custom audits defined inline in config
+  customAudits: z.array(z.any()).default([]),
+
+  // Plugins — objects or string paths to npm packages / local files
+  plugins: z.array(z.any()).default([]),
 
   wcagTags: z
     .array(z.string())
@@ -93,6 +100,13 @@ export const WebguardConfigSchema = z.object({
     .object({
       maxRetries: z.number().min(1).default(3),
       delayMs: z.number().min(0).default(5000),
+    })
+    .default({}),
+
+  runner: z
+    .object({
+      concurrency: z.number().min(1).default(1),
+      failFast: z.boolean().default(false),
     })
     .default({}),
 
@@ -113,12 +127,21 @@ export const WebguardConfigSchema = z.object({
     .object({
       dir: z.string().default("./webguard-results"),
       formats: z
-        .array(z.enum(["terminal", "html", "json"]))
+        .array(z.enum(["terminal", "html", "json", "junit"]))
         .default(["terminal", "html", "json"]),
       screenshots: z.boolean().default(true),
       screenshotOnFailOnly: z.boolean().default(false),
     })
     .default({}),
+
+  baseline: z
+    .object({
+      enabled: z.boolean().default(false),
+      updateOnPass: z.boolean().default(true),
+    })
+    .default({}),
+
+  notifications: z.array(z.any()).default([]),
 });
 
 export type WebguardConfig = z.infer<typeof WebguardConfigSchema>;

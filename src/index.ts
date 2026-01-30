@@ -9,6 +9,21 @@ export type { AuditResult, PageResult, RunResult, AuditSeverity } from "./types/
 export type { RunOptions } from "./runner/index.js";
 export type { Audit, AuditContext } from "./audits/index.js";
 
+// Plugin system
+export type { WebguardPlugin, Reporter, LifecycleHooks } from "./plugins/types.js";
+export { PluginRegistry } from "./plugins/registry.js";
+export { loadPlugins } from "./plugins/loader.js";
+
+// Notifications
+export type { NotificationChannel } from "./notifications/types.js";
+export { createWebhookNotifier } from "./notifications/webhook.js";
+export { createSlackNotifier } from "./notifications/slack.js";
+export { sendNotifications } from "./notifications/index.js";
+
+// Baseline
+export type { BaselineComparison, AuditChange } from "./baseline/types.js";
+export { saveBaseline, loadBaseline, compareRuns } from "./baseline/index.js";
+
 // Audits (for custom composition)
 export { HttpStatusAudit } from "./audits/http-status.js";
 export { ContentVisibilityAudit } from "./audits/content-visibility.js";

@@ -4,6 +4,7 @@ import fs from "fs";
 import chalk from "chalk";
 import { loadConfig } from "../config/loader.js";
 import { run } from "../runner/index.js";
+import { saveBaseline, loadBaseline, compareRuns } from "../baseline/index.js";
 import { log } from "../utils/logger.js";
 
 const pkg = JSON.parse(
@@ -142,6 +143,7 @@ program
     "Comma-separated audit names to run",
     (val: string) => val.split(",").map((s) => s.trim())
   )
+  .option("--diff", "Compare results with saved baseline")
   .action(async (opts) => {
     try {
       // Load dotenv from cwd
@@ -161,6 +163,34 @@ program
         pagesFilter: opts.pages,
         auditsFilter: opts.audits,
       });
+
+      // Baseline comparison
+      if (opts.diff || config.baseline.enabled) {
+        const outputDir = path.resolve(config.output.dir);
+        const baseline = loadBaseline(outputDir);
+        if (baseline) {
+          const comparison = compareRuns(baseline, result);
+          console.log(chalk.bold("  Baseline Comparison:"));
+          if (comparison.summary.regressions > 0) {
+            console.log(chalk.red(`    ${comparison.summary.regressions} regression(s)`));
+          }
+          if (comparison.summary.improvements > 0) {
+            console.log(chalk.green(`    ${comparison.summary.improvements} improvement(s)`));
+          }
+          console.log(chalk.dim(`    ${comparison.summary.unchanged} unchanged`));
+          if (comparison.summary.newAudits > 0) {
+            console.log(chalk.blue(`    ${comparison.summary.newAudits} new audit(s)`));
+          }
+          console.log("");
+        } else {
+          log.dim("  No baseline found. Run 'webguard baseline save' to create one.");
+        }
+
+        // Auto-save baseline if all pass
+        if (config.baseline.updateOnPass && result.summary.failed === 0) {
+          saveBaseline(result, path.resolve(config.output.dir));
+        }
+      }
 
       // Exit with non-zero if any audits failed
       if (result.summary.failed > 0) {
@@ -229,6 +259,169 @@ program
         log.error("No HTML report found. Run 'webguard run' first.");
         process.exit(1);
       }
+    } catch (err) {
+      log.error((err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ── validate ─────────────────────────────────────────
+program
+  .command("validate")
+  .description("Validate config file without running audits")
+  .option("-c, --config <path>", "Path to config file")
+  .action(async (opts) => {
+    try {
+      const config = await loadConfig(opts.config);
+      log.success("Config is valid");
+      log.info(`Base URL: ${config.baseURL}`);
+      log.info(`Pages:    ${config.pages.length}`);
+      log.info(`Audits:   ${Object.entries(config.audits).filter(([, v]) => v).map(([k]) => k).join(", ")}`);
+      if (config.plugins.length > 0) {
+        log.info(`Plugins:  ${config.plugins.length}`);
+      }
+    } catch (err) {
+      log.error((err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ── baseline ─────────────────────────────────────────
+const baselineCmd = program
+  .command("baseline")
+  .description("Manage baseline for regression comparison");
+
+baselineCmd
+  .command("save")
+  .description("Save the latest run as baseline")
+  .option("-c, --config <path>", "Path to config file")
+  .action(async (opts) => {
+    try {
+      const config = await loadConfig(opts.config);
+      const outputDir = path.resolve(config.output.dir);
+
+      // Find latest run
+      const runs = fs
+        .readdirSync(outputDir)
+        .filter((d) => d.startsWith("run-"))
+        .sort()
+        .reverse();
+
+      if (runs.length === 0) {
+        log.error("No runs found. Run 'webguard run' first.");
+        process.exit(1);
+      }
+
+      const latestRun = path.join(outputDir, runs[0]);
+      const jsonReport = path.join(latestRun, "results.json");
+
+      if (!fs.existsSync(jsonReport)) {
+        log.error("No results.json found in latest run.");
+        process.exit(1);
+      }
+
+      const result = JSON.parse(fs.readFileSync(jsonReport, "utf-8"));
+      saveBaseline(result, outputDir);
+    } catch (err) {
+      log.error((err as Error).message);
+      process.exit(1);
+    }
+  });
+
+baselineCmd
+  .command("show")
+  .description("Show current baseline summary")
+  .option("-c, --config <path>", "Path to config file")
+  .action(async (opts) => {
+    try {
+      const config = await loadConfig(opts.config);
+      const outputDir = path.resolve(config.output.dir);
+      const baseline = loadBaseline(outputDir);
+
+      if (!baseline) {
+        log.info("No baseline saved yet.");
+        return;
+      }
+
+      log.info(`Baseline from: ${baseline.timestamp}`);
+      log.info(`Pages: ${baseline.pages.length}`);
+      log.info(
+        `Results: ${baseline.summary.passed} passed, ${baseline.summary.failed} failed, ${baseline.summary.warnings} warnings`
+      );
+    } catch (err) {
+      log.error((err as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ── diff ─────────────────────────────────────────────
+program
+  .command("diff")
+  .description("Compare the latest run with the baseline")
+  .option("-c, --config <path>", "Path to config file")
+  .action(async (opts) => {
+    try {
+      const config = await loadConfig(opts.config);
+      const outputDir = path.resolve(config.output.dir);
+
+      const baseline = loadBaseline(outputDir);
+      if (!baseline) {
+        log.error("No baseline found. Run 'webguard baseline save' first.");
+        process.exit(1);
+      }
+
+      // Find latest run
+      const runs = fs
+        .readdirSync(outputDir)
+        .filter((d) => d.startsWith("run-"))
+        .sort()
+        .reverse();
+
+      if (runs.length === 0) {
+        log.error("No runs found. Run 'webguard run' first.");
+        process.exit(1);
+      }
+
+      const latestRun = path.join(outputDir, runs[0]);
+      const jsonReport = path.join(latestRun, "results.json");
+
+      if (!fs.existsSync(jsonReport)) {
+        log.error("No results.json found in latest run.");
+        process.exit(1);
+      }
+
+      const current = JSON.parse(fs.readFileSync(jsonReport, "utf-8"));
+      const comparison = compareRuns(baseline, current);
+
+      console.log("");
+      console.log(chalk.bold("  Baseline Comparison"));
+      console.log(chalk.dim(`  ${comparison.baselineTimestamp} → ${comparison.currentTimestamp}`));
+      console.log("");
+
+      if (comparison.summary.regressions > 0) {
+        console.log(chalk.red.bold(`  Regressions: ${comparison.summary.regressions}`));
+        for (const c of comparison.changes.filter((x) => x.type === "regression")) {
+          console.log(chalk.red(`    ✗ ${c.page} → ${c.audit}: ${c.baseline?.severity} → ${c.current?.severity}`));
+        }
+        console.log("");
+      }
+
+      if (comparison.summary.improvements > 0) {
+        console.log(chalk.green.bold(`  Improvements: ${comparison.summary.improvements}`));
+        for (const c of comparison.changes.filter((x) => x.type === "improvement")) {
+          console.log(chalk.green(`    ✓ ${c.page} → ${c.audit}: ${c.baseline?.severity} → ${c.current?.severity}`));
+        }
+        console.log("");
+      }
+
+      console.log(chalk.dim(`  Unchanged: ${comparison.summary.unchanged}`));
+      if (comparison.summary.newAudits > 0) {
+        console.log(chalk.blue(`  New audits: ${comparison.summary.newAudits}`));
+      }
+      if (comparison.summary.removedAudits > 0) {
+        console.log(chalk.yellow(`  Removed audits: ${comparison.summary.removedAudits}`));
+      }
+      console.log("");
     } catch (err) {
       log.error((err as Error).message);
       process.exit(1);
