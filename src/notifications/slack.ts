@@ -26,7 +26,7 @@ export function createSlackNotifier(
           attachments: [
             {
               color,
-              title: `Webguard: ${status}`,
+              title: `Webguardx: ${status}`,
               title_link: config.baseURL,
               text: `${summary.passed} passed, ${summary.failed} failed, ${summary.warnings} warnings`,
               fields: [
@@ -34,7 +34,7 @@ export function createSlackNotifier(
                 { title: "Pages", value: `${config.pages.length}`, short: true },
                 { title: "Duration", value: `${(summary.duration / 1000).toFixed(1)}s`, short: true },
               ],
-              footer: "webguard",
+              footer: "webguardx",
               ts: Math.floor(Date.now() / 1000),
             },
           ],

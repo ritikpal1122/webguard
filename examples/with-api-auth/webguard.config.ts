@@ -1,4 +1,4 @@
-import { defineConfig } from "webguard";
+import { defineConfig } from "webguardx";
 
 export default defineConfig({
   baseURL: "https://myapp.com",

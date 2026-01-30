@@ -1,4 +1,4 @@
-import { defineConfig } from "webguard";
+import { defineConfig } from "webguardx";
 import myPlugin from "./my-plugin";
 
 export default defineConfig({

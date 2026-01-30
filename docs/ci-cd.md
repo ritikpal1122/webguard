@@ -27,7 +27,7 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run webguard
-        run: npx webguard run
+        run: npx webguardx run
         env:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
@@ -73,7 +73,7 @@ Save a baseline from a known-good run, then compare on every deploy:
 
 ```yaml
 - name: Run with diff
-  run: npx webguard run --diff
+  run: npx webguardx run --diff
 ```
 
 The baseline file (`baseline.json`) can be committed to your repo or cached between CI runs.
@@ -83,7 +83,7 @@ The baseline file (`baseline.json`) can be committed to your repo or cached betw
 Send results to Slack or a webhook:
 
 ```ts
-import { defineConfig, createSlackNotifier } from "webguard";
+import { defineConfig, createSlackNotifier } from "webguardx";
 
 export default defineConfig({
   // ...

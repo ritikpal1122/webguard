@@ -43,15 +43,15 @@ Web applications break in ways users notice first — slow loads, missing conten
 
 ```bash
 # Install
-npm install webguard
+npm install webguardx
 
 # Scaffold a config
-npx webguard init
+npx webguardx init
 
 # Edit webguard.config.ts with your pages
 
 # Run audits
-npx webguard run
+npx webguardx run
 ```
 
 ## Configuration
@@ -59,7 +59,7 @@ npx webguard run
 Create `webguard.config.ts` in your project root:
 
 ```ts
-import { defineConfig } from "webguard";
+import { defineConfig } from "webguardx";
 
 export default defineConfig({
   baseURL: "https://myapp.com",
@@ -230,7 +230,7 @@ webguard-results/
 ## Programmatic API
 
 ```ts
-import { defineConfig, run, loadConfig } from "webguard";
+import { defineConfig, run, loadConfig } from "webguardx";
 
 // Option 1: Define config inline
 const config = defineConfig({

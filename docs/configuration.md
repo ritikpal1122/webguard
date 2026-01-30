@@ -5,7 +5,7 @@ Full reference for `webguard.config.ts`.
 ## Minimal Config
 
 ```ts
-import { defineConfig } from "webguard";
+import { defineConfig } from "webguardx";
 
 export default defineConfig({
   baseURL: "https://example.com",
@@ -16,7 +16,7 @@ export default defineConfig({
 ## Full Config
 
 ```ts
-import { defineConfig } from "webguard";
+import { defineConfig } from "webguardx";
 
 export default defineConfig({
   // Required: base URL for all pages

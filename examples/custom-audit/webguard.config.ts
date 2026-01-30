@@ -1,5 +1,5 @@
-import { defineConfig } from "webguard";
-import type { Audit } from "webguard";
+import { defineConfig } from "webguardx";
+import type { Audit } from "webguardx";
 
 // Custom audit: check that every page has a <h1> tag
 const headingAudit: Audit = {

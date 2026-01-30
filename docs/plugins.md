@@ -7,7 +7,7 @@ Plugins let you extend webguard with custom audits, reporters, and lifecycle hoo
 A plugin is a plain object implementing the `WebguardPlugin` interface:
 
 ```ts
-import type { WebguardPlugin } from "webguard";
+import type { WebguardPlugin } from "webguardx";
 
 const myPlugin: WebguardPlugin = {
   name: "my-plugin",
@@ -67,7 +67,7 @@ export default myPlugin;
 ### Inline (object)
 
 ```ts
-import { defineConfig } from "webguard";
+import { defineConfig } from "webguardx";
 import myPlugin from "./my-plugin";
 
 export default defineConfig({

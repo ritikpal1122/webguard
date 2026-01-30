@@ -48,7 +48,7 @@ export function reportJunit(result: RunResult, runDir: string): void {
   const time = (summary.duration / 1000).toFixed(3);
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  xml += `<testsuites name="webguard" tests="${summary.totalAudits}" failures="${summary.failed}" skipped="${summary.skipped}" time="${time}">\n`;
+  xml += `<testsuites name="webguardx" tests="${summary.totalAudits}" failures="${summary.failed}" skipped="${summary.skipped}" time="${time}">\n`;
 
   result.pages.forEach((page, i) => {
     xml += buildTestSuite(page, i);

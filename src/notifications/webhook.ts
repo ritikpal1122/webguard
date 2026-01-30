@@ -22,7 +22,7 @@ export function createWebhookNotifier(
           ...options.headers,
         },
         body: JSON.stringify({
-          tool: "webguard",
+          tool: "webguardx",
           status: result.summary.failed > 0 ? "fail" : "pass",
           baseURL: config.baseURL,
           timestamp: result.timestamp,

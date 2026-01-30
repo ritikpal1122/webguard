@@ -1,4 +1,4 @@
-import type { WebguardPlugin } from "webguard";
+import type { WebguardPlugin } from "webguardx";
 import fs from "fs";
 import path from "path";
 

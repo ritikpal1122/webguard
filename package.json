@@ -1,6 +1,6 @@
 {
-  "name": "webguard",
-  "version": "0.1.0",
+  "name": "webguardx",
+  "version": "0.1.1",
   "description": "Full-page web audit framework - accessibility, performance, SEO, broken links, and more",
   "keywords": [
     "accessibility",
@@ -26,7 +26,7 @@
   },
   "type": "module",
   "bin": {
-    "webguard": "./dist/bin/cli.cjs"
+    "webguardx": "./dist/bin/cli.cjs"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -62,7 +62,6 @@
   },
   "dependencies": {
     "@axe-core/playwright": "^4.11.0",
-    "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "dotenv": "^17.2.3",
     "jiti": "^2.4.2",

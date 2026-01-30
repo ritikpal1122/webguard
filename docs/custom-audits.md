@@ -5,8 +5,8 @@ You can add custom audits without creating a full plugin.
 ## Inline Custom Audit
 
 ```ts
-import { defineConfig } from "webguard";
-import type { Audit } from "webguard";
+import { defineConfig } from "webguardx";
+import type { Audit } from "webguardx";
 
 const checkPageTitle: Audit = {
   name: "pageTitle",

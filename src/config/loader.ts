@@ -19,7 +19,7 @@ export async function loadConfig(
 
   if (!resolvedPath) {
     throw new Error(
-      `No webguard config found. Run "webguard init" to create one, or specify --config <path>.`
+      `No webguard config found. Run "webguardx init" to create one, or specify --config <path>.`
     );
   }
 

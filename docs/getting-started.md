@@ -3,7 +3,7 @@
 ## Installation
 
 ```bash
-npm install webguard
+npm install webguardx
 ```
 
 Install the Playwright browser:
@@ -15,7 +15,7 @@ npx playwright install chromium
 ## Quick Setup
 
 ```bash
-npx webguard init
+npx webguardx init
 ```
 
 This creates:
@@ -28,7 +28,7 @@ This creates:
 1. Edit `webguard.config.ts` with your site URL and pages:
 
 ```ts
-import { defineConfig } from "webguard";
+import { defineConfig } from "webguardx";
 
 export default defineConfig({
   baseURL: "https://your-site.com",
@@ -42,13 +42,13 @@ export default defineConfig({
 2. Run audits:
 
 ```bash
-npx webguard run
+npx webguardx run
 ```
 
 3. View results:
 
 ```bash
-npx webguard report --open
+npx webguardx report --open
 ```
 
 ## What Gets Audited

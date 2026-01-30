@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import path from "path";
 import fs from "fs";
-import chalk from "chalk";
+import { c } from "../utils/colors.js";
 import { loadConfig } from "../config/loader.js";
 import { run } from "../runner/index.js";
 import { saveBaseline, loadBaseline, compareRuns } from "../baseline/index.js";
@@ -14,7 +14,7 @@ const pkg = JSON.parse(
 const program = new Command();
 
 program
-  .name("webguard")
+  .name("webguardx")
   .description("Full-page web audit framework")
   .version(pkg.version);
 
@@ -45,7 +45,7 @@ program
       // Inline fallback
       fs.writeFileSync(
         configPath,
-        `import { defineConfig } from "webguard";
+        `import { defineConfig } from "webguardx";
 
 export default defineConfig({
   baseURL: "https://example.com",
@@ -152,7 +152,7 @@ program
 
       console.log("");
       console.log(
-        chalk.bold(`  webguard ${chalk.dim(`v${pkg.version}`)}`)
+        c.bold(`  webguard ${c.dim(`v${pkg.version}`)}`)
       );
       console.log("");
 
@@ -170,16 +170,16 @@ program
         const baseline = loadBaseline(outputDir);
         if (baseline) {
           const comparison = compareRuns(baseline, result);
-          console.log(chalk.bold("  Baseline Comparison:"));
+          console.log(c.bold("  Baseline Comparison:"));
           if (comparison.summary.regressions > 0) {
-            console.log(chalk.red(`    ${comparison.summary.regressions} regression(s)`));
+            console.log(c.red(`    ${comparison.summary.regressions} regression(s)`));
           }
           if (comparison.summary.improvements > 0) {
-            console.log(chalk.green(`    ${comparison.summary.improvements} improvement(s)`));
+            console.log(c.green(`    ${comparison.summary.improvements} improvement(s)`));
           }
-          console.log(chalk.dim(`    ${comparison.summary.unchanged} unchanged`));
+          console.log(c.dim(`    ${comparison.summary.unchanged} unchanged`));
           if (comparison.summary.newAudits > 0) {
-            console.log(chalk.blue(`    ${comparison.summary.newAudits} new audit(s)`));
+            console.log(c.blue(`    ${comparison.summary.newAudits} new audit(s)`));
           }
           console.log("");
         } else {
@@ -394,32 +394,32 @@ program
       const comparison = compareRuns(baseline, current);
 
       console.log("");
-      console.log(chalk.bold("  Baseline Comparison"));
-      console.log(chalk.dim(`  ${comparison.baselineTimestamp} → ${comparison.currentTimestamp}`));
+      console.log(c.bold("  Baseline Comparison"));
+      console.log(c.dim(`  ${comparison.baselineTimestamp} → ${comparison.currentTimestamp}`));
       console.log("");
 
       if (comparison.summary.regressions > 0) {
-        console.log(chalk.red.bold(`  Regressions: ${comparison.summary.regressions}`));
-        for (const c of comparison.changes.filter((x) => x.type === "regression")) {
-          console.log(chalk.red(`    ✗ ${c.page} → ${c.audit}: ${c.baseline?.severity} → ${c.current?.severity}`));
+        console.log(c.bold(c.red(`  Regressions: ${comparison.summary.regressions}`)));
+        for (const ch of comparison.changes.filter((x) => x.type === "regression")) {
+          console.log(c.red(`    ✗ ${ch.page} → ${ch.audit}: ${ch.baseline?.severity} → ${ch.current?.severity}`));
         }
         console.log("");
       }
 
       if (comparison.summary.improvements > 0) {
-        console.log(chalk.green.bold(`  Improvements: ${comparison.summary.improvements}`));
-        for (const c of comparison.changes.filter((x) => x.type === "improvement")) {
-          console.log(chalk.green(`    ✓ ${c.page} → ${c.audit}: ${c.baseline?.severity} → ${c.current?.severity}`));
+        console.log(c.bold(c.green(`  Improvements: ${comparison.summary.improvements}`)));
+        for (const ch of comparison.changes.filter((x) => x.type === "improvement")) {
+          console.log(c.green(`    ✓ ${ch.page} → ${ch.audit}: ${ch.baseline?.severity} → ${ch.current?.severity}`));
         }
         console.log("");
       }
 
-      console.log(chalk.dim(`  Unchanged: ${comparison.summary.unchanged}`));
+      console.log(c.dim(`  Unchanged: ${comparison.summary.unchanged}`));
       if (comparison.summary.newAudits > 0) {
-        console.log(chalk.blue(`  New audits: ${comparison.summary.newAudits}`));
+        console.log(c.blue(`  New audits: ${comparison.summary.newAudits}`));
       }
       if (comparison.summary.removedAudits > 0) {
-        console.log(chalk.yellow(`  Removed audits: ${comparison.summary.removedAudits}`));
+        console.log(c.yellow(`  Removed audits: ${comparison.summary.removedAudits}`));
       }
       console.log("");
     } catch (err) {
