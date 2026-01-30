@@ -1,6 +1,6 @@
 {
   "name": "webguardx",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Full-page web audit framework - accessibility, performance, SEO, broken links, and more",
   "keywords": [
     "accessibility",
